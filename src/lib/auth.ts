@@ -7,7 +7,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [Google],
   session: { strategy: "database" },
+  pages: { signIn: "/login" },
   callbacks: {
+    async signIn({ user }) {
+      if (!user.email) return false;
+      const allowed = await prisma.allowedTester.findUnique({
+        where: { email: user.email },
+      });
+      return Boolean(allowed);
+    },
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
