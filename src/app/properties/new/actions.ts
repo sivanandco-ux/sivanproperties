@@ -1,9 +1,21 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { put } from "@vercel/blob";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+
+// Photos are uploaded client-side directly to Vercel Blob (see
+// NewPropertyForm.tsx) before this action ever runs -- Vercel's serverless
+// functions reject request bodies over ~4.5MB at the platform level,
+// regardless of Next's own configurable serverActions.bodySizeLimit, so raw
+// photo files can never be sent through this action's FormData.
+function isOwnBlobUrl(url: string): boolean {
+  try {
+    return new URL(url).hostname.endsWith(".public.blob.vercel-storage.com");
+  } catch {
+    return false;
+  }
+}
 
 export async function createProperty(formData: FormData) {
   const session = await auth();
@@ -25,9 +37,10 @@ export async function createProperty(formData: FormData) {
     throw new Error("Title and description are required.");
   }
 
-  const photoFiles = formData
-    .getAll("photos")
-    .filter((f): f is File => f instanceof File && f.size > 0);
+  const photoUrls = formData
+    .getAll("photoUrls")
+    .map((v) => String(v))
+    .filter(isOwnBlobUrl);
 
   const property = await prisma.property.create({
     data: {
@@ -40,18 +53,11 @@ export async function createProperty(formData: FormData) {
       state,
       pincode,
       priceInInr,
+      photos: {
+        create: photoUrls.map((url) => ({ url })),
+      },
     },
   });
-
-  for (const file of photoFiles) {
-    const blob = await put(`properties/${property.id}/${file.name}`, file, {
-      access: "public",
-      addRandomSuffix: true,
-    });
-    await prisma.photo.create({
-      data: { propertyId: property.id, url: blob.url },
-    });
-  }
 
   redirect(`/properties/${property.id}`);
 }
