@@ -1,5 +1,5 @@
 // Usage: node scripts/add-tester.mjs someone@example.com "optional note"
-import { PrismaClient } from "../src/generated/prisma/client.ts";
+import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 
 const [, , email, note] = process.argv;
