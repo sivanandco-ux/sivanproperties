@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { signIn } from "@/lib/auth";
 
 export default async function LoginPage({
@@ -10,7 +11,14 @@ export default async function LoginPage({
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black px-6">
       <div className="w-full max-w-sm rounded-lg border border-zinc-200 dark:border-zinc-800 p-8 text-center">
-        <h1 className="text-lg font-semibold mb-2">Sivan Properties</h1>
+        <Image
+          src="/logo/sivan-properties.jpg"
+          alt="Sivan Properties"
+          width={112}
+          height={112}
+          className="mx-auto mb-4 rounded-xl"
+          priority
+        />
         <p className="text-sm text-zinc-500 mb-6">
           This site is in development. Access is limited to approved testers.
         </p>

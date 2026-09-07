@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
@@ -17,11 +18,20 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
-      <header className="border-b border-zinc-200 dark:border-zinc-800 px-6 py-4">
-        <h1 className="text-xl font-semibold">Sivan Properties</h1>
-        <p className="text-sm text-zinc-500">
-          Chennai listings for NRI owners &mdash; rent or sale
-        </p>
+      <header className="border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 flex items-center gap-3">
+        <Image
+          src="/logo/sivan-properties.jpg"
+          alt="Sivan Properties"
+          width={44}
+          height={44}
+          className="rounded-lg"
+        />
+        <div>
+          <h1 className="text-xl font-semibold">Sivan Properties</h1>
+          <p className="text-sm text-zinc-500">
+            Chennai listings for NRI owners &mdash; rent or sale
+          </p>
+        </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-8">
