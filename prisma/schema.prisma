@@ -217,6 +217,7 @@ model Prospect {
 
   name       String
   contact    String
+  notes      String?        @db.Text
   source     ProspectSource @default(PUBLIC_FORM)
 
   events     PipelineEvent[]
