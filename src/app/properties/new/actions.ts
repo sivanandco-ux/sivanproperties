@@ -14,15 +14,15 @@ export async function createProperty(formData: FormData) {
   const title = String(formData.get("title") || "").trim();
   const description = String(formData.get("description") || "").trim();
   const listingType = String(formData.get("listingType") || "RENT") as "RENT" | "SALE";
-  const addressLine = String(formData.get("addressLine") || "").trim();
+  const addressLine = String(formData.get("addressLine") || "").trim() || null;
   const city = String(formData.get("city") || "Chennai").trim();
   const state = String(formData.get("state") || "Tamil Nadu").trim();
   const pincode = String(formData.get("pincode") || "").trim() || null;
   const priceRaw = String(formData.get("priceInInr") || "").trim();
   const priceInInr = priceRaw ? Number(priceRaw) : null;
 
-  if (!title || !description || !addressLine) {
-    throw new Error("Title, description, and address are required.");
+  if (!title || !description) {
+    throw new Error("Title and description are required.");
   }
 
   const photoFiles = formData

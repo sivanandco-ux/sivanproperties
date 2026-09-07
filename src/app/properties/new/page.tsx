@@ -52,10 +52,9 @@ export default function NewPropertyPage() {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">Address</span>
+            <span className="text-sm font-medium">Address (optional for now)</span>
             <input
               name="addressLine"
-              required
               className="rounded border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
               placeholder="Street / area"
             />

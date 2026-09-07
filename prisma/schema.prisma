@@ -168,7 +168,7 @@ model Property {
   listingType ListingType
   status      ListingStatus @default(ACTIVE)
 
-  addressLine String
+  addressLine String?
   city        String        @default("Chennai")
   state       String        @default("Tamil Nadu")
   pincode     String?

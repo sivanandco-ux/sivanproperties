@@ -61,7 +61,8 @@ export default async function PropertyManagePage({
 
         <h1 className="text-2xl font-semibold mt-2">{property.title}</h1>
         <p className="text-zinc-500 mb-8">
-          {property.addressLine}, {property.city} &middot;{" "}
+          {property.addressLine ? `${property.addressLine}, ` : ""}
+          {property.city} &middot;{" "}
           <Link
             href={`/listings/${property.id}`}
             className="underline hover:no-underline"

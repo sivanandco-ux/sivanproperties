@@ -39,7 +39,8 @@ export default async function ListingPage({
 
         <h1 className="text-2xl font-semibold">{property.title}</h1>
         <p className="text-zinc-500 mb-4">
-          {property.addressLine}, {property.city}, {property.state}
+          {property.addressLine ? `${property.addressLine}, ` : ""}
+          {property.city}, {property.state}
           {property.pincode ? ` - ${property.pincode}` : ""}
         </p>
 
