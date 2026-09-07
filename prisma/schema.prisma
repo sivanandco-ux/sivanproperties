@@ -44,6 +44,52 @@ enum PipelineStage {
   OUTCOME_DROPPED
 }
 
+enum LeaseStatus {
+  ACTIVE
+  RENEWED
+  EXPIRED
+  VACATED
+}
+
+enum ProfessionalRole {
+  CPA
+  LAWYER
+  PROPERTY_INSPECTOR
+  PROPERTY_MANAGER
+  POLICE_VERIFICATION_AGENT
+  OTHER
+}
+
+enum TaskType {
+  LEASE_DRAFTING
+  LEASE_SIGNING
+  TENANT_POLICE_VERIFICATION
+  PROPERTY_INSPECTION
+  RENT_COLLECTION
+  TDS_FILING
+  INDIA_TAX_FILING
+  US_TAX_FILING
+  PROPERTY_TAX_PAYMENT
+  MAINTENANCE_PAYMENT
+  LEASE_RENEWAL_DECISION
+  VACATE_NOTICE
+  OTHER
+}
+
+enum TaskRecurrence {
+  ONE_TIME
+  MONTHLY
+  QUARTERLY
+  HALF_YEARLY
+  ANNUAL
+}
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
+  OVERDUE
+}
+
 model AllowedTester {
   email     String   @id
   note      String?
@@ -129,9 +175,11 @@ model Property {
 
   priceInInr  Int?
 
-  photos      Photo[]
-  assignments Assignment[]
-  prospects   Prospect[]
+  photos        Photo[]
+  assignments   Assignment[]
+  prospects     Prospect[]
+  leases        Lease[]
+  professionals Professional[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -172,6 +220,7 @@ model Prospect {
   source     ProspectSource @default(PUBLIC_FORM)
 
   events     PipelineEvent[]
+  leases     Lease[]
 
   createdAt  DateTime @default(now())
 
@@ -193,4 +242,73 @@ model PipelineEvent {
   createdAt  DateTime @default(now())
 
   @@map("pipeline_events")
+}
+
+model Professional {
+  id         String           @id @default(cuid())
+  propertyId String
+  property   Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  name       String
+  role       ProfessionalRole
+  contact    String?
+  licenseNumber String?
+  notes      String?          @db.Text
+
+  tasks      Task[]
+
+  createdAt  DateTime @default(now())
+
+  @@map("professionals")
+}
+
+model Lease {
+  id         String      @id @default(cuid())
+  propertyId String
+  property   Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  prospectId String?
+  prospect   Prospect?   @relation(fields: [prospectId], references: [id])
+
+  tenantName    String
+  tenantContact String
+
+  startDate DateTime
+  endDate   DateTime
+
+  rentInInr    Int
+  depositInInr Int
+
+  status LeaseStatus @default(ACTIVE)
+
+  tasks Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("leases")
+}
+
+model Task {
+  id      String @id @default(cuid())
+  leaseId String
+  lease   Lease  @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+
+  type       TaskType
+  title      String?
+  recurrence TaskRecurrence @default(ONE_TIME)
+  status     TaskStatus     @default(PENDING)
+
+  dueDate DateTime
+
+  assignedProfessionalId String?
+  assignedProfessional   Professional? @relation(fields: [assignedProfessionalId], references: [id])
+
+  completedDate    DateTime?
+  completedByName  String?
+  proofDocumentUrl String?
+  notes            String?   @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@map("tasks")
 }
