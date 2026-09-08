@@ -1,5 +1,12 @@
 import type { TaskType, TaskRecurrence } from "@/generated/prisma/client";
 
+/** The checklist gating "Lease Signed" -> "Moved In" on the admin stage bar. */
+export const PRE_MOVE_IN_TASK_TYPES: TaskType[] = [
+  "ADVANCE_PAYMENT",
+  "DEPOSIT_PAYMENT",
+  "KEY_HANDOVER",
+];
+
 export type DefaultTaskSpec = {
   type: TaskType;
   recurrence: TaskRecurrence;
@@ -55,6 +62,9 @@ export function defaultTasksForLease(lease: {
       dueDate: addDays(startDate, -3),
       notes: "Required in many Tamil Nadu jurisdictions — check with local police station.",
     },
+    { type: "ADVANCE_PAYMENT", recurrence: "ONE_TIME", dueDate: addDays(startDate, -7) },
+    { type: "DEPOSIT_PAYMENT", recurrence: "ONE_TIME", dueDate: addDays(startDate, -7) },
+    { type: "KEY_HANDOVER", recurrence: "ONE_TIME", dueDate: startDate },
     {
       type: "LEASE_RENEWAL_DECISION",
       recurrence: "ONE_TIME",

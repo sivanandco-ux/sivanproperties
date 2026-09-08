@@ -37,14 +37,24 @@ export default async function Home() {
             </p>
           </div>
         </div>
-        {session?.user && (
-          <Link
-            href="/properties/new"
-            className="shrink-0 rounded-full bg-foreground text-background px-4 py-2 text-sm font-medium hover:bg-[#383838] dark:hover:bg-[#ccc] transition-colors"
-          >
-            List a property
-          </Link>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {session?.user?.role === "ADMIN" && (
+            <Link
+              href="/admin"
+              className="rounded-full border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+            >
+              Admin
+            </Link>
+          )}
+          {session?.user && (
+            <Link
+              href="/properties/new"
+              className="rounded-full bg-foreground text-background px-4 py-2 text-sm font-medium hover:bg-[#383838] dark:hover:bg-[#ccc] transition-colors"
+            >
+              List a property
+            </Link>
+          )}
+        </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-8">

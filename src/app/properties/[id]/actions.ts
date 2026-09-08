@@ -9,7 +9,8 @@ async function requireOwner(propertyId: string) {
   if (!session?.user) throw new Error("Not authenticated.");
 
   const property = await prisma.property.findUnique({ where: { id: propertyId } });
-  if (!property || property.ownerId !== session.user.id) {
+  const isAdmin = session.user.role === "ADMIN";
+  if (!property || (!isAdmin && property.ownerId !== session.user.id)) {
     throw new Error("Not authorized for this property.");
   }
   return { session, property };
@@ -45,6 +46,7 @@ export async function advanceStage(
     | "VIEWING_SCHEDULED"
     | "VIEWED"
     | "DISCUSSION"
+    | "BACKGROUND_CHECK"
     | "OUTCOME_RENTED"
     | "OUTCOME_SOLD"
     | "OUTCOME_DROPPED";

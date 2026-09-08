@@ -11,6 +11,7 @@ const STAGE_LABELS: Record<string, string> = {
   VIEWING_SCHEDULED: "Viewing Scheduled",
   VIEWED: "Viewed",
   DISCUSSION: "Discussion",
+  BACKGROUND_CHECK: "Background Check",
   OUTCOME_RENTED: "Rented",
   OUTCOME_SOLD: "Sold",
   OUTCOME_DROPPED: "Dropped",
@@ -40,7 +41,8 @@ export default async function PropertyManagePage({
   });
 
   if (!property) notFound();
-  if (property.ownerId !== session.user.id) {
+  const isAdmin = session.user.role === "ADMIN";
+  if (!isAdmin && property.ownerId !== session.user.id) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6">
         <p className="text-zinc-500">
