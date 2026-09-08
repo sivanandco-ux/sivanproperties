@@ -34,13 +34,7 @@ export default function PropertyStageBar({
         return (
           <div key={s} className="flex items-center flex-1 last:flex-none">
             <div className="flex flex-col items-center gap-1">
-              {href ? (
-                <Link href={href} onClick={(e) => e.stopPropagation()}>
-                  {dot}
-                </Link>
-              ) : (
-                dot
-              )}
+              {href ? <Link href={href}>{dot}</Link> : dot}
               <span
                 className={`text-[10px] whitespace-nowrap ${
                   isCurrent ? "font-semibold" : "text-zinc-400"
