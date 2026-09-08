@@ -1,13 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { createProperty } from "./actions";
+
+type PickedPhoto = { file: File; previewUrl: string };
 
 export default function NewPropertyForm() {
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [photos, setPhotos] = useState<PickedPhoto[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      for (const p of photos) URL.revokeObjectURL(p.previewUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function addFiles(fileList: FileList | File[]) {
+    const files = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+    setPhotos((prev) => [
+      ...prev,
+      ...files.map((file) => ({ file, previewUrl: URL.createObjectURL(file) })),
+    ]);
+  }
+
+  function removePhoto(index: number) {
+    setPhotos((prev) => {
+      URL.revokeObjectURL(prev[index].previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -17,19 +45,16 @@ export default function NewPropertyForm() {
     try {
       const form = e.currentTarget;
       const formData = new FormData(form);
-      const photoInput = form.elements.namedItem("photos") as HTMLInputElement;
-      const files = Array.from(photoInput?.files ?? []);
 
       const photoUrls: string[] = [];
-      for (let i = 0; i < files.length; i++) {
-        setStatus(`Uploading photo ${i + 1} of ${files.length}...`);
-        const blob = await upload(files[i].name, files[i], {
+      for (let i = 0; i < photos.length; i++) {
+        setStatus(`Uploading photo ${i + 1} of ${photos.length}...`);
+        const blob = await upload(photos[i].file.name, photos[i].file, {
           access: "public",
           handleUploadUrl: "/api/upload",
         });
         photoUrls.push(blob.url);
       }
-      formData.delete("photos");
       for (const url of photoUrls) {
         formData.append("photoUrls", url);
       }
@@ -131,16 +156,64 @@ export default function NewPropertyForm() {
         />
       </label>
 
-      <label className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         <span className="text-sm font-medium">Photos</span>
+
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragging(false);
+            addFiles(e.dataTransfer.files);
+          }}
+          className={`cursor-pointer rounded border-2 border-dashed px-4 py-8 text-center text-sm transition-colors ${
+            isDragging
+              ? "border-foreground bg-zinc-100 dark:bg-zinc-900"
+              : "border-zinc-300 dark:border-zinc-700 text-zinc-500"
+          }`}
+        >
+          Drag and drop photos here, or click to browse
+        </div>
         <input
-          name="photos"
+          ref={fileInputRef}
           type="file"
           accept="image/*"
           multiple
-          className="rounded border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
+          className="hidden"
+          onChange={(e) => {
+            if (e.target.files) addFiles(e.target.files);
+            e.target.value = "";
+          }}
         />
-      </label>
+
+        {photos.length > 0 && (
+          <div className="grid grid-cols-3 gap-2 mt-1">
+            {photos.map((photo, index) => (
+              <div key={photo.previewUrl} className="relative group">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photo.previewUrl}
+                  alt={photo.file.name}
+                  className="w-full aspect-square object-cover rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => removePhoto(index)}
+                  aria-label={`Remove ${photo.file.name}`}
+                  className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white text-xs hover:bg-black/90"
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <button
         type="submit"
