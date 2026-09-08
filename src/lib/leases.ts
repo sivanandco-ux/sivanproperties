@@ -6,6 +6,7 @@ export async function createLeaseWithDefaultTasks(data: {
   prospectId?: string;
   tenantName: string;
   tenantContact: string;
+  tenantEmail: string;
   startDate: Date;
   endDate: Date;
   rentInInr: number;
@@ -18,6 +19,7 @@ export async function createLeaseWithDefaultTasks(data: {
         prospectId: data.prospectId,
         tenantName: data.tenantName,
         tenantContact: data.tenantContact,
+        tenantEmail: data.tenantEmail,
         startDate: data.startDate,
         endDate: data.endDate,
         rentInInr: data.rentInInr,

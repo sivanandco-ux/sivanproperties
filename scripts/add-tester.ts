@@ -1,11 +1,12 @@
-// Usage: node scripts/add-tester.mjs someone@example.com "optional note"
+// Usage: npx tsx scripts/add-tester.ts <email> <ADMIN|LANDLORD> [note]
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 
-const [, , email, note] = process.argv;
+const [, , email, roleArg, note] = process.argv;
+const role = (roleArg || "LANDLORD").toUpperCase();
 
-if (!email) {
-  console.error("Usage: node scripts/add-tester.mjs <email> [note]");
+if (!email || (role !== "ADMIN" && role !== "LANDLORD")) {
+  console.error("Usage: npx tsx scripts/add-tester.ts <email> <ADMIN|LANDLORD> [note]");
   process.exit(1);
 }
 
@@ -15,8 +16,8 @@ async function main() {
 
   const tester = await prisma.allowedTester.upsert({
     where: { email },
-    update: { note },
-    create: { email, note },
+    update: { role, note },
+    create: { email, role, note },
   });
 
   console.log("Added/updated allowed tester:", tester);

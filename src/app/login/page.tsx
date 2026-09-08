@@ -26,7 +26,7 @@ export default async function LoginPage({
         {error && (
           <p className="mb-4 rounded bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 text-sm px-3 py-2">
             {error === "AccessDenied"
-              ? "That Google account isn't on the approved tester list yet."
+              ? "That Google account doesn't have access. It needs to be an approved tester, the tenant on a lease, or an assigned contributor."
               : "Something went wrong signing in. Please try again."}
           </p>
         )}

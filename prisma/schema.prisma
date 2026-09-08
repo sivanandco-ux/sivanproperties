@@ -13,8 +13,10 @@ datasource db {
 }
 
 enum Role {
-  OWNER
-  AGENT
+  ADMIN
+  LANDLORD
+  TENANT
+  CONTRIBUTOR
 }
 
 enum ListingType {
@@ -52,10 +54,12 @@ enum LeaseStatus {
 }
 
 enum ProfessionalRole {
+  AGENT
   CPA
   LAWYER
   PROPERTY_INSPECTOR
   PROPERTY_MANAGER
+  MAINTENANCE_TEAM
   POLICE_VERIFICATION_AGENT
   OTHER
 }
@@ -92,6 +96,7 @@ enum TaskStatus {
 
 model AllowedTester {
   email     String   @id
+  role      Role     @default(LANDLORD)
   note      String?
   createdAt DateTime @default(now())
 
@@ -104,14 +109,14 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
-  role          Role      @default(OWNER)
+  role          Role      @default(LANDLORD)
 
   accounts Account[]
   sessions Session[]
 
-  ownedProperties Property[]   @relation("OwnerProperties")
-  assignments     Assignment[] @relation("AgentAssignments")
+  ownedProperties Property[]      @relation("OwnerProperties")
   pipelineEvents  PipelineEvent[] @relation("EventAuthor")
+  professionalAssignmentsMade PropertyProfessional[] @relation("AssignedByAdmin")
 
   createdAt DateTime @default(now())
 
@@ -175,11 +180,10 @@ model Property {
 
   priceInInr  Int?
 
-  photos        Photo[]
-  assignments   Assignment[]
-  prospects     Prospect[]
-  leases        Lease[]
-  professionals Professional[]
+  photos                  Photo[]
+  prospects               Prospect[]
+  leases                  Lease[]
+  professionalAssignments PropertyProfessional[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -196,18 +200,6 @@ model Photo {
   createdAt  DateTime @default(now())
 
   @@map("photos")
-}
-
-model Assignment {
-  id         String   @id @default(cuid())
-  propertyId String
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  agentId    String
-  agent      User     @relation("AgentAssignments", fields: [agentId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-
-  @@unique([propertyId, agentId])
-  @@map("assignments")
 }
 
 model Prospect {
@@ -246,21 +238,37 @@ model PipelineEvent {
 }
 
 model Professional {
-  id         String           @id @default(cuid())
-  propertyId String
-  property   Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  id    String           @id @default(cuid())
+  name  String
+  role  ProfessionalRole
+  email String           @unique
 
-  name       String
-  role       ProfessionalRole
-  contact    String?
+  contact       String?
   licenseNumber String?
-  notes      String?          @db.Text
+  notes         String?          @db.Text
 
-  tasks      Task[]
+  tasks       Task[]
+  assignments PropertyProfessional[]
 
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@map("professionals")
+}
+
+model PropertyProfessional {
+  id             String       @id @default(cuid())
+  propertyId     String
+  property       Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  assignedByUserId String
+  assignedByUser   User   @relation("AssignedByAdmin", fields: [assignedByUserId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([propertyId, professionalId])
+  @@map("property_professionals")
 }
 
 model Lease {
@@ -272,6 +280,7 @@ model Lease {
 
   tenantName    String
   tenantContact String
+  tenantEmail   String
 
   startDate DateTime
   endDate   DateTime
