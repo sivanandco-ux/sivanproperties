@@ -93,7 +93,7 @@ export function computePropertyStage(property: PropertyForStage): PropertyStageR
   return { stage: "COMPLIANT", blockingItems: [] };
 }
 
-const TASK_TYPE_LABELS: Record<string, string> = {
+export const TASK_TYPE_LABELS: Record<string, string> = {
   LEASE_DRAFTING: "Lease drafting",
   LEASE_SIGNING: "Lease signing",
   TENANT_POLICE_VERIFICATION: "Tenant police verification",

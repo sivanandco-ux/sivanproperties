@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import SiteHeader from "@/components/SiteHeader";
 import { addProspect, advanceStage } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,7 @@ export default async function PropertyManagePage({
           events: { orderBy: { createdAt: "desc" }, take: 1 },
         },
       },
+      leases: { orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -55,7 +57,9 @@ export default async function PropertyManagePage({
   const addProspectWithId = addProspect.bind(null, property.id);
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black px-6 py-10">
+    <div className="min-h-screen bg-zinc-50 dark:bg-black">
+      <SiteHeader />
+      <div className="px-6 py-10">
       <div className="mx-auto max-w-3xl">
         <Link href="/" className="text-sm text-zinc-500 hover:underline">
           &larr; Back to listings
@@ -72,6 +76,35 @@ export default async function PropertyManagePage({
             View public listing
           </Link>
         </p>
+
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold">Leases ({property.leases.length})</h2>
+          <Link
+            href={`/properties/${property.id}/leases/new`}
+            className="rounded-full border border-zinc-300 dark:border-zinc-700 px-3 py-1 text-xs font-medium hover:bg-zinc-100 dark:hover:bg-zinc-900"
+          >
+            + New lease
+          </Link>
+        </div>
+        {property.leases.length === 0 ? (
+          <p className="text-zinc-500 mb-8">No leases yet.</p>
+        ) : (
+          <div className="flex flex-col gap-2 mb-8">
+            {property.leases.map((lease) => (
+              <Link
+                key={lease.id}
+                href={`/properties/${property.id}/leases/${lease.id}`}
+                className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 hover:shadow-sm transition-shadow flex items-center justify-between"
+              >
+                <span className="font-medium">{lease.tenantName}</span>
+                <span className="text-xs text-zinc-500">
+                  {lease.startDate.toISOString().slice(0, 10)} &rarr;{" "}
+                  {lease.endDate.toISOString().slice(0, 10)} &middot; {lease.status}
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
 
         <h2 className="font-semibold mb-3">
           Prospects ({property.prospects.length})
@@ -137,6 +170,12 @@ export default async function PropertyManagePage({
                     >
                       Update
                     </button>
+                    <Link
+                      href={`/properties/${property.id}/leases/new?prospectId=${prospect.id}`}
+                      className="text-sm underline hover:no-underline"
+                    >
+                      Create lease
+                    </Link>
                   </form>
                 </div>
               );
@@ -173,6 +212,7 @@ export default async function PropertyManagePage({
             </button>
           </form>
         </div>
+      </div>
       </div>
     </div>
   );

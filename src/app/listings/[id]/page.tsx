@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import SiteHeader from "@/components/SiteHeader";
 import { submitInterest } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,9 @@ export default async function ListingPage({
   const submitWithId = submitInterest.bind(null, property.id);
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black px-6 py-10">
+    <div className="min-h-screen bg-zinc-50 dark:bg-black">
+      <SiteHeader />
+      <div className="px-6 py-10">
       <div className="mx-auto max-w-3xl">
         {property.photos.length > 0 && (
           <div className="grid grid-cols-2 gap-2 mb-6">
@@ -87,6 +90,7 @@ export default async function ListingPage({
             </button>
           </form>
         </div>
+      </div>
       </div>
     </div>
   );

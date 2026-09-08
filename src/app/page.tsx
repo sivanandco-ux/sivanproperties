@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import SiteHeader from "@/components/SiteHeader";
 import type { Prisma } from "@/generated/prisma/client";
 
 type PropertyWithPhoto = Prisma.PropertyGetPayload<{
@@ -21,22 +21,12 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
-      <header className="border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Image
-            src="/logo/sivan-properties.jpg"
-            alt="Sivan Properties"
-            width={112}
-            height={112}
-            className="rounded-xl"
-          />
-          <div>
-            <h1 className="text-2xl font-semibold">Sivan Properties</h1>
-            <p className="text-sm text-zinc-500">
-              Chennai listings for NRI owners &mdash; rent or sale
-            </p>
-          </div>
-        </div>
+      <SiteHeader />
+
+      <div className="border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between gap-4">
+        <p className="text-sm text-zinc-500">
+          Chennai listings for NRI owners &mdash; rent or sale
+        </p>
         <div className="flex items-center gap-2 shrink-0">
           {session?.user?.role === "ADMIN" && (
             <Link
@@ -55,7 +45,7 @@ export default async function Home() {
             </Link>
           )}
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto max-w-5xl px-6 py-8">
         {properties.length === 0 ? (
