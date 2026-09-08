@@ -10,15 +10,24 @@ async function requireLeaseAccess(propertyId: string, leaseId: string) {
 
   const lease = await prisma.lease.findUnique({
     where: { id: leaseId },
-    include: { property: true },
+    include: {
+      property: { include: { professionalAssignments: true } },
+    },
   });
   if (!lease || lease.propertyId !== propertyId) throw new Error("Lease not found.");
 
   const isAdmin = session.user.role === "ADMIN";
-  if (!isAdmin && lease.property.ownerId !== session.user.id) {
+  const isOwner = lease.property.ownerId === session.user.id;
+  const isContributor =
+    session.user.role === "CONTRIBUTOR" &&
+    lease.property.professionalAssignments.some(
+      (a) => a.professionalId === session.user.professionalId
+    );
+
+  if (!isAdmin && !isOwner && !isContributor) {
     throw new Error("Not authorized for this lease.");
   }
-  return { session, lease };
+  return { session, lease, isAdmin, isOwner, isContributor };
 }
 
 export async function completeTask(
@@ -27,7 +36,15 @@ export async function completeTask(
   taskId: string,
   formData: FormData
 ) {
-  const { session } = await requireLeaseAccess(propertyId, leaseId);
+  const { session, isAdmin, isOwner } = await requireLeaseAccess(propertyId, leaseId);
+
+  const task = await prisma.task.findUniqueOrThrow({ where: { id: taskId } });
+
+  const canComplete =
+    isAdmin || isOwner || task.assignedProfessionalId === session.user.professionalId;
+  if (!canComplete) {
+    throw new Error("You can only complete tasks assigned to you.");
+  }
 
   const proofDocumentUrl = String(formData.get("proofDocumentUrl") || "").trim() || null;
   const notes = String(formData.get("notes") || "").trim() || null;
@@ -53,7 +70,10 @@ export async function assignProfessionalToTask(
   taskId: string,
   formData: FormData
 ) {
-  await requireLeaseAccess(propertyId, leaseId);
+  const { isAdmin, isOwner } = await requireLeaseAccess(propertyId, leaseId);
+  if (!isAdmin && !isOwner) {
+    throw new Error("Only Admin or the landlord can reassign tasks.");
+  }
 
   const professionalId = String(formData.get("professionalId") || "").trim() || null;
 

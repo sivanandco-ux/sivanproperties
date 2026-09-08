@@ -34,7 +34,15 @@ export default async function AdminDashboardPage() {
       <SiteHeader />
       <div className="px-6 py-8">
       <div className="mx-auto max-w-4xl">
-        <h1 className="text-xl font-semibold mb-1">Admin</h1>
+        <div className="flex items-center justify-between mb-1">
+          <h1 className="text-xl font-semibold">Admin</h1>
+          <Link
+            href="/admin/professionals"
+            className="rounded-full border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:hover:bg-zinc-900"
+          >
+            Professionals
+          </Link>
+        </div>
         <p className="text-sm text-zinc-500 mb-6">
           {properties.length} propert{properties.length === 1 ? "y" : "ies"} across all landlords
         </p>

@@ -16,6 +16,14 @@ async function requireOwner(propertyId: string) {
   return { session, property };
 }
 
+async function isAssignedContributor(propertyId: string, professionalId?: string) {
+  if (!professionalId) return false;
+  const assignment = await prisma.propertyProfessional.findUnique({
+    where: { propertyId_professionalId: { propertyId, professionalId } },
+  });
+  return Boolean(assignment);
+}
+
 export async function addProspect(propertyId: string, formData: FormData) {
   await requireOwner(propertyId);
 
@@ -56,6 +64,62 @@ export async function advanceStage(
 
   await prisma.pipelineEvent.create({
     data: { prospectId, stage, notes, authorId: session.user.id },
+  });
+
+  revalidatePath(`/properties/${propertyId}`);
+}
+
+export async function assignProfessional(propertyId: string, formData: FormData) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") {
+    throw new Error("Admin access only.");
+  }
+
+  const professionalId = String(formData.get("professionalId") || "").trim();
+  if (!professionalId) throw new Error("Choose a professional to assign.");
+
+  await prisma.propertyProfessional.upsert({
+    where: { propertyId_professionalId: { propertyId, professionalId } },
+    update: {},
+    create: { propertyId, professionalId, assignedByUserId: session.user.id },
+  });
+
+  revalidatePath(`/properties/${propertyId}`);
+}
+
+export async function unassignProfessional(propertyId: string, formData: FormData) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") {
+    throw new Error("Admin access only.");
+  }
+
+  const professionalId = String(formData.get("professionalId") || "").trim();
+
+  await prisma.propertyProfessional.delete({
+    where: { propertyId_professionalId: { propertyId, professionalId } },
+  });
+
+  revalidatePath(`/properties/${propertyId}`);
+}
+
+export async function addNote(propertyId: string, formData: FormData) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Not authenticated.");
+
+  const isAdmin = session.user.role === "ADMIN";
+  const isContributor =
+    session.user.role === "CONTRIBUTOR" &&
+    (await isAssignedContributor(propertyId, session.user.professionalId));
+
+  if (!isAdmin && !isContributor) {
+    throw new Error("Only Admin or an assigned contributor can add team notes.");
+  }
+
+  const body = String(formData.get("body") || "").trim();
+  if (!body) throw new Error("Note can't be empty.");
+
+  await prisma.note.create({
+    data: { propertyId, authorId: session.user.id, body },
   });
 
   revalidatePath(`/properties/${propertyId}`);

@@ -36,7 +36,15 @@ export default async function Home() {
               Admin
             </Link>
           )}
-          {session?.user && (
+          {session?.user?.role === "CONTRIBUTOR" && (
+            <Link
+              href="/contributor"
+              className="rounded-full border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+            >
+              My properties
+            </Link>
+          )}
+          {(session?.user?.role === "ADMIN" || session?.user?.role === "LANDLORD") && (
             <Link
               href="/properties/new"
               className="rounded-full bg-foreground text-background px-4 py-2 text-sm font-medium hover:bg-[#383838] dark:hover:bg-[#ccc] transition-colors"

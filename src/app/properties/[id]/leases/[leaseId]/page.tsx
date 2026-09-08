@@ -32,13 +32,23 @@ export default async function LeaseDetailPage({
   if (!lease || lease.propertyId !== id) notFound();
 
   const isAdmin = session.user.role === "ADMIN";
-  if (!isAdmin && lease.property.ownerId !== session.user.id) {
+  const isOwner = lease.property.ownerId === session.user.id;
+  const isContributor =
+    session.user.role === "CONTRIBUTOR" &&
+    lease.property.professionalAssignments.some(
+      (a) => a.professionalId === session.user.professionalId
+    );
+
+  if (!isAdmin && !isOwner && !isContributor) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6">
         <p className="text-zinc-500">You&apos;re not authorized for this lease.</p>
       </div>
     );
   }
+
+  const canReassign = isAdmin || isOwner;
+  const myProfessionalId = session.user.professionalId;
 
   const now = new Date();
   const overdue = lease.tasks.filter((t) => t.status !== "COMPLETED" && t.dueDate < now);
@@ -53,6 +63,8 @@ export default async function LeaseDetailPage({
     const completeWithIds = completeTask.bind(null, id, leaseId, task.id);
     const assignWithIds = assignProfessionalToTask.bind(null, id, leaseId, task.id);
     const isOverdue = task.status !== "COMPLETED" && task.dueDate < now;
+    const canComplete =
+      isAdmin || isOwner || task.assignedProfessionalId === myProfessionalId;
 
     return (
       <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
@@ -74,6 +86,12 @@ export default async function LeaseDetailPage({
 
         {task.notes && <p className="text-sm text-zinc-500 mt-1">{task.notes}</p>}
 
+        {task.assignedProfessional && (
+          <p className="text-xs text-zinc-400 mt-1">
+            Assigned to {task.assignedProfessional.name}
+          </p>
+        )}
+
         {task.status === "COMPLETED" ? (
           <p className="text-xs text-zinc-400 mt-2">
             Completed {task.completedDate?.toISOString().slice(0, 10)} by{" "}
@@ -81,35 +99,39 @@ export default async function LeaseDetailPage({
           </p>
         ) : (
           <div className="flex flex-wrap items-center gap-2 mt-3">
-            <form action={assignWithIds} className="flex items-center gap-2">
-              <select
-                name="professionalId"
-                defaultValue={task.assignedProfessionalId || ""}
-                className="rounded border border-zinc-300 dark:border-zinc-700 bg-transparent px-2 py-1 text-sm"
-              >
-                <option value="">Unassigned</option>
-                {assignedProfessionals.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.role})
-                  </option>
-                ))}
-              </select>
-              <button
-                type="submit"
-                className="rounded-full border border-zinc-300 dark:border-zinc-700 px-3 py-1 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-900"
-              >
-                Assign
-              </button>
-            </form>
+            {canReassign && (
+              <form action={assignWithIds} className="flex items-center gap-2">
+                <select
+                  name="professionalId"
+                  defaultValue={task.assignedProfessionalId || ""}
+                  className="rounded border border-zinc-300 dark:border-zinc-700 bg-transparent px-2 py-1 text-sm"
+                >
+                  <option value="">Unassigned</option>
+                  {assignedProfessionals.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.role})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="submit"
+                  className="rounded-full border border-zinc-300 dark:border-zinc-700 px-3 py-1 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                >
+                  Assign
+                </button>
+              </form>
+            )}
 
-            <form action={completeWithIds} className="flex items-center gap-2">
-              <button
-                type="submit"
-                className="rounded-full bg-foreground text-background px-3 py-1 text-xs font-medium hover:bg-[#383838] dark:hover:bg-[#ccc]"
-              >
-                Mark complete
-              </button>
-            </form>
+            {canComplete && (
+              <form action={completeWithIds} className="flex items-center gap-2">
+                <button
+                  type="submit"
+                  className="rounded-full bg-foreground text-background px-3 py-1 text-xs font-medium hover:bg-[#383838] dark:hover:bg-[#ccc]"
+                >
+                  Mark complete
+                </button>
+              </form>
+            )}
           </div>
         )}
       </div>
