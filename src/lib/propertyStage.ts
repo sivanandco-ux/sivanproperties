@@ -109,5 +109,27 @@ export const TASK_TYPE_LABELS: Record<string, string> = {
   MAINTENANCE_PAYMENT: "Maintenance payment",
   LEASE_RENEWAL_DECISION: "Lease renewal decision",
   VACATE_NOTICE: "Vacate notice",
+  MAINTENANCE_REQUEST: "Maintenance request",
   OTHER: "Other",
 };
+
+/**
+ * Task types a Tenant is allowed to see on their lease -- everything that
+ * directly concerns them, excluding the landlord's own financial/tax
+ * matters (India/US tax filing, property tax, society maintenance
+ * payments).
+ */
+export const TENANT_VISIBLE_TASK_TYPES = [
+  "LEASE_DRAFTING",
+  "LEASE_SIGNING",
+  "TENANT_POLICE_VERIFICATION",
+  "ADVANCE_PAYMENT",
+  "DEPOSIT_PAYMENT",
+  "KEY_HANDOVER",
+  "PROPERTY_INSPECTION",
+  "RENT_COLLECTION",
+  "TDS_FILING",
+  "LEASE_RENEWAL_DECISION",
+  "VACATE_NOTICE",
+  "MAINTENANCE_REQUEST",
+] as const;

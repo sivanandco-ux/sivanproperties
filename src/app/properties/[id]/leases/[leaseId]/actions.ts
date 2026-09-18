@@ -23,11 +23,13 @@ async function requireLeaseAccess(propertyId: string, leaseId: string) {
     lease.property.professionalAssignments.some(
       (a) => a.professionalId === session.user.professionalId
     );
+  const isTenant =
+    session.user.role === "TENANT" && lease.tenantEmail === session.user.email;
 
-  if (!isAdmin && !isOwner && !isContributor) {
+  if (!isAdmin && !isOwner && !isContributor && !isTenant) {
     throw new Error("Not authorized for this lease.");
   }
-  return { session, lease, isAdmin, isOwner, isContributor };
+  return { session, lease, isAdmin, isOwner, isContributor, isTenant };
 }
 
 export async function completeTask(
@@ -80,6 +82,54 @@ export async function assignProfessionalToTask(
   await prisma.task.update({
     where: { id: taskId },
     data: { assignedProfessionalId: professionalId },
+  });
+
+  revalidatePath(`/properties/${propertyId}/leases/${leaseId}`);
+}
+
+export async function confirmPaymentAsTenant(
+  propertyId: string,
+  leaseId: string,
+  taskId: string
+) {
+  const { isTenant, lease } = await requireLeaseAccess(propertyId, leaseId);
+  if (!isTenant) throw new Error("Only the tenant on this lease can confirm payment.");
+
+  const task = await prisma.task.findUniqueOrThrow({ where: { id: taskId } });
+  if (task.leaseId !== lease.id || task.type !== "RENT_COLLECTION") {
+    throw new Error("Can only confirm rent collection tasks.");
+  }
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { tenantConfirmedDate: new Date() },
+  });
+
+  revalidatePath(`/properties/${propertyId}/leases/${leaseId}`);
+}
+
+export async function createMaintenanceRequest(
+  propertyId: string,
+  leaseId: string,
+  formData: FormData
+) {
+  const { isTenant, lease } = await requireLeaseAccess(propertyId, leaseId);
+  if (!isTenant) throw new Error("Only the tenant on this lease can report an issue.");
+
+  const title = String(formData.get("title") || "").trim();
+  const notes = String(formData.get("notes") || "").trim() || null;
+  if (!title) throw new Error("Please describe the issue.");
+
+  await prisma.task.create({
+    data: {
+      leaseId: lease.id,
+      type: "MAINTENANCE_REQUEST",
+      title,
+      notes,
+      recurrence: "ONE_TIME",
+      status: "PENDING",
+      dueDate: new Date(),
+    },
   });
 
   revalidatePath(`/properties/${propertyId}/leases/${leaseId}`);

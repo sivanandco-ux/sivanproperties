@@ -3,8 +3,13 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import SiteHeader from "@/components/SiteHeader";
-import { TASK_TYPE_LABELS } from "@/lib/propertyStage";
-import { completeTask, assignProfessionalToTask } from "./actions";
+import { TASK_TYPE_LABELS, TENANT_VISIBLE_TASK_TYPES } from "@/lib/propertyStage";
+import {
+  completeTask,
+  assignProfessionalToTask,
+  confirmPaymentAsTenant,
+  createMaintenanceRequest,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +44,10 @@ export default async function LeaseDetailPage({
       (a) => a.professionalId === session.user.professionalId
     );
 
-  if (!isAdmin && !isOwner && !isContributor) {
+  const isTenant =
+    session.user.role === "TENANT" && lease.tenantEmail === session.user.email;
+
+  if (!isAdmin && !isOwner && !isContributor && !isTenant) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6">
         <p className="text-zinc-500">You&apos;re not authorized for this lease.</p>
@@ -50,10 +58,16 @@ export default async function LeaseDetailPage({
   const canReassign = isAdmin || isOwner;
   const myProfessionalId = session.user.professionalId;
 
+  const visibleTasks = isTenant
+    ? lease.tasks.filter((t) =>
+        (TENANT_VISIBLE_TASK_TYPES as readonly string[]).includes(t.type)
+      )
+    : lease.tasks;
+
   const now = new Date();
-  const overdue = lease.tasks.filter((t) => t.status !== "COMPLETED" && t.dueDate < now);
-  const pending = lease.tasks.filter((t) => t.status !== "COMPLETED" && t.dueDate >= now);
-  const completed = lease.tasks.filter((t) => t.status === "COMPLETED");
+  const overdue = visibleTasks.filter((t) => t.status !== "COMPLETED" && t.dueDate < now);
+  const pending = visibleTasks.filter((t) => t.status !== "COMPLETED" && t.dueDate >= now);
+  const completed = visibleTasks.filter((t) => t.status === "COMPLETED");
 
   const assignedProfessionals = lease.property.professionalAssignments.map(
     (a) => a.professional
@@ -62,9 +76,12 @@ export default async function LeaseDetailPage({
   function TaskRow({ task }: { task: NonNullable<typeof lease>["tasks"][number] }) {
     const completeWithIds = completeTask.bind(null, id, leaseId, task.id);
     const assignWithIds = assignProfessionalToTask.bind(null, id, leaseId, task.id);
+    const confirmPaymentWithIds = confirmPaymentAsTenant.bind(null, id, leaseId, task.id);
     const isOverdue = task.status !== "COMPLETED" && task.dueDate < now;
     const canComplete =
       isAdmin || isOwner || task.assignedProfessionalId === myProfessionalId;
+    const canConfirmPayment =
+      isTenant && task.type === "RENT_COLLECTION" && !task.tenantConfirmedDate;
 
     return (
       <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
@@ -89,6 +106,12 @@ export default async function LeaseDetailPage({
         {task.assignedProfessional && (
           <p className="text-xs text-zinc-400 mt-1">
             Assigned to {task.assignedProfessional.name}
+          </p>
+        )}
+
+        {task.tenantConfirmedDate && (
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+            Tenant confirmed paid on {task.tenantConfirmedDate.toISOString().slice(0, 10)}
           </p>
         )}
 
@@ -132,6 +155,17 @@ export default async function LeaseDetailPage({
                 </button>
               </form>
             )}
+
+            {canConfirmPayment && (
+              <form action={confirmPaymentWithIds} className="flex items-center gap-2">
+                <button
+                  type="submit"
+                  className="rounded-full border border-emerald-600 text-emerald-600 dark:text-emerald-400 px-3 py-1 text-xs font-medium hover:bg-emerald-50 dark:hover:bg-emerald-950"
+                >
+                  I paid this
+                </button>
+              </form>
+            )}
           </div>
         )}
       </div>
@@ -154,6 +188,35 @@ export default async function LeaseDetailPage({
             {lease.rentInInr.toLocaleString("en-IN")}/mo &middot; Deposit &#8377;
             {lease.depositInInr.toLocaleString("en-IN")} &middot; {lease.status}
           </p>
+
+          {isTenant && (
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 mb-6 max-w-md">
+              <h2 className="font-semibold mb-3">Report an issue</h2>
+              <form
+                action={createMaintenanceRequest.bind(null, id, leaseId)}
+                className="flex flex-col gap-2"
+              >
+                <input
+                  name="title"
+                  required
+                  placeholder="What's wrong? (e.g. Leaking kitchen tap)"
+                  className="rounded border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm"
+                />
+                <textarea
+                  name="notes"
+                  rows={2}
+                  placeholder="Any more details (optional)"
+                  className="rounded border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm"
+                />
+                <button
+                  type="submit"
+                  className="self-start rounded-full bg-foreground text-background px-4 py-1.5 text-sm font-medium hover:bg-[#383838] dark:hover:bg-[#ccc]"
+                >
+                  Submit request
+                </button>
+              </form>
+            </div>
+          )}
 
           {overdue.length > 0 && (
             <section className="mb-6">

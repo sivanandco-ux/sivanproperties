@@ -44,6 +44,14 @@ export default async function Home() {
               My properties
             </Link>
           )}
+          {session?.user?.role === "TENANT" && (
+            <Link
+              href="/tenant"
+              className="rounded-full border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+            >
+              My lease
+            </Link>
+          )}
           {(session?.user?.role === "ADMIN" || session?.user?.role === "LANDLORD") && (
             <Link
               href="/properties/new"

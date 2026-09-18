@@ -81,6 +81,7 @@ enum TaskType {
   MAINTENANCE_PAYMENT
   LEASE_RENEWAL_DECISION
   VACATE_NOTICE
+  MAINTENANCE_REQUEST
   OTHER
 }
 
@@ -323,6 +324,10 @@ model Task {
   completedByName  String?
   proofDocumentUrl String?
   notes            String?   @db.Text
+
+  // Tenant's own "I paid" stamp -- informational, separate from the
+  // landlord/admin's authoritative completedDate/status.
+  tenantConfirmedDate DateTime?
 
   createdAt DateTime @default(now())
 
